@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: cardiosight
+    name: cardiosight-ai
     runtime: docker
     plan: free
     healthCheckPath: /home
@@ -9,6 +9,22 @@ services:
         value: "0"
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: FLASK_SECRET_KEY
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_CREDENTIALS_PATH
+        sync: false
       - key: BREVO_API_KEY
         sync: false
       - key: BREVO_SENDER_EMAIL
