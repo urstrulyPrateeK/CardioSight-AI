@@ -61,4 +61,4 @@ We have created a web application and a prediction model based on machine learni
 
 Happy Learning
 
-Team VTUPulse.com
+Created by Prateek Singh
