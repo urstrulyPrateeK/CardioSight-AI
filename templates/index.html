@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="hero animate-fade-in">
+  <h1>Advanced Heart Health Prediction</h1>
+  <p>Leveraging AI and OCR technology to provide instant risk assessment from your medical reports.</p>
+  <a href="/predict_page" class="btn-primary"><i class="fas fa-stethoscope"></i> Check Your Heart Health</a>
+</header>
+
+<div class="glass-card animate-fade-in" style="margin-top: -50px; position: relative;">
+  <div class="grid-2">
+    <div style="padding: 20px;">
+      <h3><i class="fas fa-rocket"></i> Fast & Accurate</h3>
+      <p>Our machine learning models analyze 13 key health indicators to provide immediate risk probablity with high
+        accuracy.</p>
+    </div>
+    <div style="padding: 20px;">
+      <h3><i class="fas fa-file-alt"></i> OCR Integration</h3>
+      <p>No need to type manually. Simply upload a photo of your medical report, and we extract the data for you.</p>
+    </div>
+    <div style="padding: 20px;">
+      <h3><i class="fas fa-user-md"></i> Doctor Dashboard</h3>
+      <p>Specialized view for medical professionals to track patient statistics and trends over time.</p>
+    </div>
+    <div style="padding: 20px;">
+      <h3><i class="fas fa-lock"></i> Secure & Private</h3>
+      <p>Your data is processed securely and is never stored permanently on our servers.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

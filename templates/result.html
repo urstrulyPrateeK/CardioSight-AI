@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass-card animate-fade-in" style="text-align: center;">
+  <h2 style="color: var(--primary-color);">CardioSight Assessment Result</h2>
+
+  <div class="grid-2" style="margin-top: 40px; align-items: center;">
+    <div>
+      <div style="width: 250px; height: 250px; margin: 0 auto; position: relative;">
+        <canvas id="riskChart"></canvas>
+      </div>
+      <h1 style="font-size: 2.5rem; margin-top: 20px; color: {{ result.risk_color }};">
+        {{ result.risk_level }} Risk
+      </h1>
+      <p>Meta-Learner Probability: <strong>{{ result.probability }}%</strong></p>
+    </div>
+
+    <div style="text-align: left; padding: 20px; background: rgba(255,255,255,0.6); border-radius: 15px;">
+      <h3 style="margin-bottom: 15px;"><i class="fas fa-brain"></i> Neural Analysis Breakdown</h3>
+      <p style="font-size: 0.9rem; margin-bottom: 20px;">
+        Our CNN-LSTM architecture synthesized opinions from 5 distinct clinical models:
+      </p>
+
+      {% for model, score in result.ai_analysis.items() %}
+      <div style="margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; font-weight: 500;">
+          <span>{{ model }} Model</span>
+          <span>{{ score }}% Risk</span>
+        </div>
+        <div style="height: 8px; background: #ddd; border-radius: 4px; overflow: hidden;">
+          <div style="height: 100%; width: {{ score }}%; background: var(--secondary-color);"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="margin-top: 40px; text-align: left;">
+    <h3>Clinical Recommendation</h3>
+    {% if result.risk_level == 'High' %}
+    <div class="alert"
+      style="background: #ffe6e6; color: #cc0000; padding: 15px; border-radius: 10px; border-left: 5px solid #cc0000;">
+      <i class="fas fa-exclamation-triangle"></i>
+      <strong>Attention Required:</strong> The consensus of our AI models indicates a significant risk profile.
+      Immediate consultation with a cardiologist is recommended to verify these findings with further diagnostic tests.
+    </div>
+    {% elif result.risk_level == 'Moderate' %}
+    <div class="alert"
+      style="background: #fff3e0; color: #e65100; padding: 15px; border-radius: 10px; border-left: 5px solid #e65100;">
+      <i class="fas fa-info-circle"></i>
+      <strong>Caution Advised:</strong> While not critical, your parameters suggest a border-line risk. Lifestyle
+      adjustments regarding diet and exercise are highly recommended.
+    </div>
+    {% else %}
+    <div class="alert"
+      style="background: #e6ffe6; color: #006600; padding: 15px; border-radius: 10px; border-left: 5px solid #006600;">
+      <i class="fas fa-check-circle"></i>
+      <strong>Healthy Profile:</strong> Your heart health indicators are within normal ranges. Keep up the good work
+      with your current lifestyle!
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Action Buttons -->
+  <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+    <!-- Download Report Form -->
+    <form action="/download_report" method="POST" style="display: inline;">
+      <input type="hidden" name="name" value="{{ result.name }}">
+      <input type="hidden" name="email" value="{{ result.email }}">
+      <input type="hidden" name="probability" value="{{ result.probability }}">
+      <input type="hidden" name="risk_level" value="{{ result.risk_level }}">
+      <input type="hidden" name="risk_color" value="{{ result.risk_color }}">
+      <input type="hidden" name="age" value="{{ result.details.age }}">
+      <input type="hidden" name="gender" value="{{ result.details.gender }}">
+      <input type="hidden" name="cp_label" value="{{ result.details.cp_label }}">
+      <input type="hidden" name="trestbps" value="{{ result.details.trestbps }}">
+      <input type="hidden" name="chol" value="{{ result.details.chol }}">
+      <input type="hidden" name="fbs_label" value="{{ result.details.fbs_label }}">
+      <input type="hidden" name="restecg_label" value="{{ result.details.restecg_label }}">
+      <input type="hidden" name="thalach" value="{{ result.details.thalach }}">
+      <input type="hidden" name="exang_label" value="{{ result.details.exang_label }}">
+      <input type="hidden" name="oldpeak" value="{{ result.details.oldpeak }}">
+      <input type="hidden" name="slope_label" value="{{ result.details.slope_label }}">
+      <input type="hidden" name="ca" value="{{ result.details.ca }}">
+      <input type="hidden" name="thal_label" value="{{ result.details.thal_label }}">
+      {% for model, score in result.ai_analysis.items() %}
+      <input type="hidden" name="ai_{{ model }}" value="{{ score }}">
+      {% endfor %}
+      <button type="submit" class="btn-primary">
+        <i class="fas fa-file-download"></i> Download Detailed Clinical Report
+      </button>
+    </form>
+
+    <!-- Mail Report Button (only show if email exists) -->
+    {% if result.email %}
+    <button type="button" class="btn-primary" id="mailReportBtn"
+      style="background: linear-gradient(135deg, #0077b6, #00b4d8); border: none;"
+      onclick="sendReport()">
+      <i class="fas fa-envelope"></i> Mail Report
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  const ctx = document.getElementById('riskChart').getContext('2d');
+  const probability = {{ result.probability }};
+  const riskColor = "{{ result.risk_color }}";
+
+  let chartColor;
+  if (riskColor === 'red') chartColor = '#ff4b2b';
+  else if (riskColor === 'orange') chartColor = '#ff9800';
+  else chartColor = '#00c853';
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Risk', 'Health'],
+      datasets: [{
+        data: [probability, 100 - probability],
+        backgroundColor: [chartColor, '#e0e0e0'],
+        borderWidth: 0,
+        hoverOffset: 4
+      }]
+    },
+    options: {
+      cutout: '75%',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false }
+      },
+      animation: {
+        animateScale: true,
+        animateRotate: true
+      }
+    }
+  });
+
+  function sendReport() {
+    const btn = document.getElementById('mailReportBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+    const formData = new FormData();
+    formData.append('name', '{{ result.name }}');
+    formData.append('email', '{{ result.email }}');
+    formData.append('probability', '{{ result.probability }}');
+    formData.append('risk_level', '{{ result.risk_level }}');
+    formData.append('risk_color', '{{ result.risk_color }}');
+    formData.append('age', '{{ result.details.age }}');
+    formData.append('gender', '{{ result.details.gender }}');
+    formData.append('cp_label', '{{ result.details.cp_label }}');
+    formData.append('trestbps', '{{ result.details.trestbps }}');
+    formData.append('chol', '{{ result.details.chol }}');
+    formData.append('fbs_label', '{{ result.details.fbs_label }}');
+    formData.append('restecg_label', '{{ result.details.restecg_label }}');
+    formData.append('thalach', '{{ result.details.thalach }}');
+    formData.append('exang_label', '{{ result.details.exang_label }}');
+    formData.append('oldpeak', '{{ result.details.oldpeak }}');
+    formData.append('slope_label', '{{ result.details.slope_label }}');
+    formData.append('ca', '{{ result.details.ca }}');
+    formData.append('thal_label', '{{ result.details.thal_label }}');
+    {% for model, score in result.ai_analysis.items() %}
+    formData.append('ai_{{ model }}', '{{ score }}');
+    {% endfor %}
+
+    fetch('/send_report', {
+      method: 'POST',
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Mailed';
+        btn.style.background = 'linear-gradient(135deg, #00c853, #00e676)';
+        btn.style.cursor = 'default';
+      } else {
+        btn.innerHTML = '<i class="fas fa-times-circle"></i> Failed';
+        btn.style.background = 'linear-gradient(135deg, #ff4b2b, #ff6b4a)';
+        btn.disabled = false;
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fas fa-envelope"></i> Mail Report';
+          btn.style.background = 'linear-gradient(135deg, #0077b6, #00b4d8)';
+        }, 3000);
+        alert('Error: ' + (data.error || 'Could not send email.'));
+      }
+    })
+    .catch(err => {
+      btn.innerHTML = '<i class="fas fa-envelope"></i> Mail Report';
+      btn.style.background = 'linear-gradient(135deg, #0077b6, #00b4d8)';
+      btn.disabled = false;
+      alert('Network error. Please try again.');
+    });
+  }
+</script>
+{% endblock %}

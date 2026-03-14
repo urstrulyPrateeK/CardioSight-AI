@@ -1,0 +1,27 @@
+# Virtual environments
+.venv/
+hdp_env/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Firebase credentials (SECURITY - never commit secrets)
+cardiosight-d4414-firebase-adminsdk-fbsvc-75676d467e.json
+
+# Uploads directory (user-generated at runtime)
+uploads/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

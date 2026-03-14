@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="glass-card animate-fade-in">
+    <h2><i class="fas fa-user-md"></i> Medical Dashboard</h2>
+    <p>Overview of patient statistics and system usage.</p>
+
+    <div class="dash-grid">
+        <div class="stat-card">
+            <div class="stat-number">1,245</div>
+            <div>Total Screenings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #ff4b2b;">34%</div>
+            <div>High Risk Cases</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="color: #2575fc;">98%</div>
+            <div>Model Accuracy</div>
+        </div>
+    </div>
+
+    <div class="grid-2" style="margin-top: 40px;">
+        <div class="stat-card">
+            <h3>Patients by Gender</h3>
+            <canvas id="genderChart"></canvas>
+        </div>
+        <div class="stat-card">
+            <h3>Age Distribution</h3>
+            <canvas id="ageChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Mock Data Charts
+    new Chart(document.getElementById('genderChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Male', 'Female'],
+            datasets: [{
+                data: [65, 35],
+                backgroundColor: ['#2575fc', '#ff4b2b']
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('ageChart'), {
+        type: 'bar',
+        data: {
+            labels: ['20-30', '30-40', '40-50', '50-60', '60+'],
+            datasets: [{
+                label: 'Patients',
+                data: [5, 15, 40, 30, 10],
+                backgroundColor: '#6a11cb'
+            }]
+        }
+    });
+</script>
+{% endblock %}

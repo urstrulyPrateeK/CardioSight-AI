@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: cardiosight
+    runtime: docker
+    plan: free
+    healthCheckPath: /home
+    envVars:
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false

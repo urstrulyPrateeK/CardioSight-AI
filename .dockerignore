@@ -1,0 +1,59 @@
+# Virtual environments
+.venv/
+hdp_env/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Documentation & reports (not needed for production)
+*.pptx
+*.docx
+Final Year Project Report.pdf
+
+# Generated training charts (not needed for production)
+correlation_matrix.png
+decision_tree_scores.png
+knn_scores.png
+random_forest_scores.png
+svm_scores.png
+target_distribution.png
+
+# Training scripts (not needed for production)
+Heart-Disease-Prediction.py
+train_cardiosight.py
+train_model.py
+run_notebook_training.py
+models.pkl
+
+# Dataset (models are already trained)
+dataset/
+
+# Images folder
+Images/
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Render config
+render.yaml
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
