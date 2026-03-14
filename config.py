@@ -2,7 +2,7 @@ import os
 
 # --- FIRBASE SERVER CONFIGURATION ---
 # Path to the Service Account JSON file downloaded from Firebase Console
-FIREBASE_CREDENTIALS_PATH = "cardiosight-d4414-firebase-adminsdk-fbsvc-75676d467e.json"
+FIREBASE_CREDENTIALS_PATH = os.environ.get("FIREBASE_CREDENTIALS_PATH", "cardiosight-d4414-firebase-adminsdk-fbsvc-75676d467e.json")
 
 # --- FIREBASE CLIENT CONFIGURATION ---
 # Values loaded from environment variables (do not hardcode secrets in source)

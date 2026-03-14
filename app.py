@@ -37,7 +37,7 @@ except ImportError:
 import config
 
 app = Flask(__name__)
-app.secret_key = 'super_secret_key_for_session_management' # In prod, use random string
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-only-change-in-production')
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
