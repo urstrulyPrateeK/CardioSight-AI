@@ -3,20 +3,21 @@
 {% block content %}
 <div class="glass-card animate-fade-in">
     <h2><i class="fas fa-user-md"></i> Medical Dashboard</h2>
-    <p>Overview of patient statistics and system usage.</p>
+    <p>Overview of your past risk assessments and patient entries.</p>
+    <p id="history-status" style="color: #666; font-style: italic; margin-top: 10px;"></p>
 
     <div class="dash-grid">
         <div class="stat-card">
-            <div class="stat-number">1,245</div>
+            <div class="stat-number" id="total-screenings">0</div>
             <div>Total Screenings</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" style="color: #ff4b2b;">34%</div>
+            <div class="stat-number" id="high-risk-cases" style="color: #ff4b2b;">0%</div>
             <div>High Risk Cases</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" style="color: #2575fc;">98%</div>
-            <div>Model Accuracy</div>
+            <div class="stat-number" id="low-risk-cases" style="color: #00c853;">0%</div>
+            <div>Low Risk Cases</div>
         </div>
     </div>
 
@@ -30,31 +31,27 @@
             <canvas id="ageChart"></canvas>
         </div>
     </div>
+
+    <div class="stat-card" style="margin-top: 30px;">
+        <h3>Prediction History</h3>
+        <div style="overflow-x: auto;">
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: rgba(37,117,252,0.08);">
+                        <th style="text-align:left; padding: 10px;">Name</th>
+                        <th style="text-align:left; padding: 10px;">Age</th>
+                        <th style="text-align:left; padding: 10px;">Probability</th>
+                        <th style="text-align:left; padding: 10px;">Result</th>
+                        <th style="text-align:left; padding: 10px;">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body">
+                    <tr>
+                        <td colspan="5" style="padding: 12px; color: #666;">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-
-<script>
-    // Mock Data Charts
-    new Chart(document.getElementById('genderChart'), {
-        type: 'pie',
-        data: {
-            labels: ['Male', 'Female'],
-            datasets: [{
-                data: [65, 35],
-                backgroundColor: ['#2575fc', '#ff4b2b']
-            }]
-        }
-    });
-
-    new Chart(document.getElementById('ageChart'), {
-        type: 'bar',
-        data: {
-            labels: ['20-30', '30-40', '40-50', '50-60', '60+'],
-            datasets: [{
-                label: 'Patients',
-                data: [5, 15, 40, 30, 10],
-                backgroundColor: '#6a11cb'
-            }]
-        }
-    });
-</script>
 {% endblock %}

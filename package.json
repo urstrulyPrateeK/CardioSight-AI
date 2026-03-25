@@ -1,0 +1,9 @@
+{
+  "name": "cardiosight-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Flask-rendered CardioSight frontend compatibility scripts",
+  "scripts": {
+    "dev": "echo Frontend is served by Flask templates at http://127.0.0.1:5000"
+  }
+}

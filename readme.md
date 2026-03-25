@@ -1,64 +1,53 @@
-## Heart Disease Prediction using Machine Learning
+# CardioSight AI
 
-According to World Health Organization statistics, cardiovascular disease is the leading cause of death in the world. CVDs were responsible for 32% of all global deaths in 2019, as estimated by the World Health Organization. Heart attacks and strokes were responsible for 85% of these deaths. Low- and middle-income countries account for more than three quarters of all CVD deaths.
+Heart disease risk prediction web app built with Flask, Firebase auth/profile storage, OCR-based form assist, and an ensemble inference pipeline:
 
-We have created a web application and a prediction model based on machine learning using which a patient can fill in basic details like age, gender, Chest Pain Types, Cholesterol Level, etc. Based on these data, the model is able to predict heart disease. We have used various machine learning algorithms like Logistic Regression, Support Vector Machine, Decision Tree, Random Forest, and KNN for prediction.User is also able to print the report for tracking the disease.
+- Base models: `LR`, `KNN`, `SVM`, `RF`, `DT`
+- Meta model: `CNN-LSTM` (`cardiosight_models/cnn_lstm.h5`)
+- Final interpretation: `Low / Moderate / High` risk bands
 
-## Installation of required software and Libraries
-1. Install the Anaconda Python Package
-2. Open Anaconda Prompt and Move to the downloaded project directory (Heart Disease Prediction) using the cd command
+## Local setup
 
-	Example:
-	>> cd Path_of_Project_Directory
-	
-3. Create the virtual environment using the below command
-	>>conda create -n hdp python==3.11.7
-4. Activate the virtual environment using the command
-	>>conda activate hdp
-5. Now install the required Libraries using the below command
-	>>pip install -r requirements.txt
+1. Create and activate a Python virtual environment.
+2. Install dependencies:
 
+```bash
+pip install -r requirements.txt
+```
 
-## Steps to train the model after Installation of required software and Libraries
-1. Open Anaconda Prompt and Move to the downloaded project directory (Heart Disease Prediction) using the cd command
+3. Copy `.env.example` to `.env` and fill required values:
+   - Firebase client config (`FIREBASE_*`)
+   - Firebase Admin credentials path (`FIREBASE_CREDENTIALS_PATH`)
+   - Optional Brevo email settings (`BREVO_*`)
+4. Start backend:
 
-	Example:
-	>> cd Path_of_Project_Directory
-	
-2. Activate the virtual environment using the command
-	>>conda activate hdp
-	
-	Note: hdp is the environment created at the time of installing the software and Libraries
-	
-3. Next to train the model open the Jupyter Notebook using the below command
-	>>jupyter notebook
-4. Open the Heart-Disease-Prediction.ipynb and run all cells
-5. Once the training is completed the trained model models.pkl will be stored in the current working directory
+```bash
+python app.py
+```
 
+App default URL: `http://127.0.0.1:5000`
 
-## Steps to run the Flask App after training the model 
-1. Open Anaconda Prompt and Move to the downloaded project directory (Heart Disease Prediction) using the cd command
+## Optional frontend command compatibility
 
-	Example:
-	>> cd Path_of_Project_Directory
-	
-2. Activate the virtual environment using the command
-	>>conda activate hdp
-	
-	Note: hdp is the environment created at the time of installing the software and Libraries
-	
-3. Run the Flask App using the below command
-	>>python app.py
-	
-	
-## Tech Stack
+This project uses Flask-rendered templates (no separate frontend build). For compatibility:
 
-**Language:** Python,Javascript,CSS,HTML
-**Algorithms:** Logistic Regression,SVM,Decision Tree,Random Forest,KNN
-**Framework:** Flask
-**Tools:** VSCode,jupyter notebook
-**Libraries:** NumPy,Pandas,Matplotlib
+```bash
+npm install
+npm run dev
+```
 
-Happy Learning
+## Project structure
 
-Created by Prateek Singh
+- `app.py` - Flask routes, inference pipeline, PDF/email report generation
+- `templates/` - UI pages (`login`, `register`, `predict`, `result`, `dashboard`)
+- `static/` - JS and CSS assets
+- `cardiosight_models/` - trained model artifacts (`*.pkl`, `cnn_lstm.h5`, `scaler.pkl`)
+- `dataset/heart_data_set.csv` - source dataset
+- `utils/ocr_engine.py` - OCR + report parsing utilities
+
+## Notes
+
+- Inference uses fixed feature order:
+  `age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal`
+- No retraining is required to run inference.
+- If Firebase credentials are not set, prediction still works but profile/history features are disabled.
