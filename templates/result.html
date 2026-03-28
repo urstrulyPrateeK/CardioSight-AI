@@ -12,13 +12,16 @@
       <h1 style="font-size: 2.5rem; margin-top: 20px; color: {{ result.risk_color }};">
         {{ result.risk_level }} Risk
       </h1>
-      <p>Meta-Learner Probability: <strong>{{ result.probability }}%</strong></p>
+      <p>Risk Probability: <strong>{{ result.final_meta_probability if result.final_meta_probability is not none else result.rf_probability }}%</strong></p>
+      <p style="font-size: 0.9rem; color: #666;">
+        Final Model: <strong>{{ result.final_model_label }}</strong>
+      </p>
     </div>
 
     <div style="text-align: left; padding: 20px; background: rgba(255,255,255,0.6); border-radius: 15px;">
       <h3 style="margin-bottom: 15px;"><i class="fas fa-brain"></i> Neural Analysis Breakdown</h3>
       <p style="font-size: 0.9rem; margin-bottom: 20px;">
-        Our CNN-LSTM architecture synthesized opinions from 5 distinct clinical models:
+        Ensemble model comparison across 5 clinical algorithms:
       </p>
 
       {% for model, score in result.ai_analysis.items() %}
@@ -68,8 +71,13 @@
       <input type="hidden" name="name" value="{{ result.name }}">
       <input type="hidden" name="email" value="{{ result.email }}">
       <input type="hidden" name="probability" value="{{ result.probability }}">
+      <input type="hidden" name="final_meta_probability" value="{{ result.final_meta_probability if result.final_meta_probability is not none else '' }}">
+      <input type="hidden" name="rf_probability" value="{{ result.rf_probability }}">
       <input type="hidden" name="risk_level" value="{{ result.risk_level }}">
       <input type="hidden" name="risk_color" value="{{ result.risk_color }}">
+      <input type="hidden" name="meta_model_used" value="{{ result.meta_model_used }}">
+      <input type="hidden" name="meta_safeguard_used" value="{{ result.meta_safeguard_used }}">
+      <input type="hidden" name="final_model_label" value="{{ result.final_model_label }}">
       <input type="hidden" name="age" value="{{ result.details.age }}">
       <input type="hidden" name="gender" value="{{ result.details.gender }}">
       <input type="hidden" name="cp_label" value="{{ result.details.cp_label }}">
@@ -104,7 +112,7 @@
 
 <script>
   const ctx = document.getElementById('riskChart').getContext('2d');
-  const probability = {{ result.probability }};
+  const probability = {{ result.final_meta_probability if result.final_meta_probability is not none else result.rf_probability }};
   const riskColor = "{{ result.risk_color }}";
 
   let chartColor;
@@ -146,8 +154,13 @@
     formData.append('name', '{{ result.name }}');
     formData.append('email', '{{ result.email }}');
     formData.append('probability', '{{ result.probability }}');
+    formData.append('final_meta_probability', '{{ result.final_meta_probability if result.final_meta_probability is not none else "" }}');
+    formData.append('rf_probability', '{{ result.rf_probability }}');
     formData.append('risk_level', '{{ result.risk_level }}');
     formData.append('risk_color', '{{ result.risk_color }}');
+    formData.append('meta_model_used', '{{ result.meta_model_used }}');
+    formData.append('meta_safeguard_used', '{{ result.meta_safeguard_used }}');
+    formData.append('final_model_label', '{{ result.final_model_label }}');
     formData.append('age', '{{ result.details.age }}');
     formData.append('gender', '{{ result.details.gender }}');
     formData.append('cp_label', '{{ result.details.cp_label }}');

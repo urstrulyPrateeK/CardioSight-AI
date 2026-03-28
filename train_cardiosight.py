@@ -25,7 +25,7 @@ print("Loading data...")
 df = pd.read_csv(DATA_PATH)
 
 # Basic preprocessing
-X = df.drop('target', axis=1)
+X = df[['age','sex','cp','trestbps','chol','fbs','restecg','thalach','exang','oldpeak','slope','ca','thal']]
 y = df['target']
 
 # Standardization
@@ -49,7 +49,14 @@ models = {
     'LR': LogisticRegression(),
     'KNN': KNeighborsClassifier(n_neighbors=11), # Paper mentions K=11 was stable
     'SVM': SVC(probability=True, kernel='linear'), # Paper mentions linear kernel was best
-    'RF': RandomForestClassifier(n_estimators=100), # Paper mentions 100 trees
+   'RF': RandomForestClassifier(
+    n_estimators=300,
+    max_depth=6,
+    min_samples_split=12,
+    min_samples_leaf=5,
+    class_weight="balanced",
+    random_state=42
+),
     'DT': DecisionTreeClassifier(max_features=11) # Paper mentions max_features=11
 }
 
@@ -94,79 +101,81 @@ for i, (name, model) in enumerate(models.items()):
 
 print("Base models trained and saved.")
 
-# --- 3. Prepare Inputs for CNN-LSTM (Stage 2) ---
-# The paper mentions concatenating:
-# 1. Original features (13)
-# 2. Base model probabilities (5)
-# 3. Pseudo-signal windows for CNN/LSTM
+# # --- 3. Prepare Inputs for CNN-LSTM (Stage 2) ---
+# # The paper mentions concatenating:
+# # 1. Original features (13)
+# # 2. Base model probabilities (5)
+# # 3. Pseudo-signal windows for CNN/LSTM
 
-# Combine features for Dense input
-X_train_dense = np.hstack([X_train, meta_X_train])
-X_test_dense = np.hstack([X_test, meta_X_test])
+# # Combine features for Dense input
+# X_train_dense = np.hstack([X_train, meta_X_train])
+# X_test_dense = np.hstack([X_test, meta_X_test])
 
-# Construct Pseudo-Signal for CNN/LSTM
-# Paper: "stacking time varying fields like max heart rate and ST depression"
-# We'll treat the feature vector itself as a sequence or select specific subset.
-# Let's take the whole feature vector (size 13) and reshape it to (13, 1) or keep it meant for 1D Conv.
-# Actually, CNN 1D expects (batch, steps, channels).
-# Let's treat the 13 features as a time-series of length 13, 1 channel.
-X_train_seq = X_train.reshape(X_train.shape[0], 13, 1)
-X_test_seq = X_test.reshape(X_test.shape[0], 13, 1)
+# # Construct Pseudo-Signal for CNN/LSTM
+# # Paper: "stacking time varying fields like max heart rate and ST depression"
+# # We'll treat the feature vector itself as a sequence or select specific subset.
+# # Let's take the whole feature vector (size 13) and reshape it to (13, 1) or keep it meant for 1D Conv.
+# # Actually, CNN 1D expects (batch, steps, channels).
+# # Let's treat the 13 features as a time-series of length 13, 1 channel.
+# X_train_seq = X_train.reshape(X_train.shape[0], 13, 1)
+# X_test_seq = X_test.reshape(X_test.shape[0], 13, 1)
 
-print(f"Meta-Learner Input Shapes: Dense {X_train_dense.shape}, Seq {X_train_seq.shape}")
+# print(f"Meta-Learner Input Shapes: Dense {X_train_dense.shape}, Seq {X_train_seq.shape}")
 
-# --- 4. Build CNN-LSTM Model ---
-def build_cnn_lstm_model(input_shape_seq, input_shape_dense):
-    # Branch 1: CNN-LSTM
-    seq_input = Input(shape=input_shape_seq, name='seq_input')
+# # --- 4. Build CNN-LSTM Model ---
+# def build_cnn_lstm_model(input_shape_seq, input_shape_dense):
+#     # Branch 1: CNN-LSTM
+#     seq_input = Input(shape=input_shape_seq, name='seq_input')
     
-    # CNN Block 1
-    x = Conv1D(filters=32, kernel_size=3, activation='relu', padding='same')(seq_input)
-    x = MaxPooling1D(pool_size=2)(x)
+#     # CNN Block 1
+#     x = Conv1D(filters=32, kernel_size=3, activation='relu', padding='same')(seq_input)
+#     x = MaxPooling1D(pool_size=2)(x)
     
-    # CNN Block 2
-    x = Conv1D(filters=64, kernel_size=3, activation='relu', padding='same')(x)
-    x = MaxPooling1D(pool_size=2)(x)
+#     # CNN Block 2
+#     x = Conv1D(filters=64, kernel_size=3, activation='relu', padding='same')(x)
+#     x = MaxPooling1D(pool_size=2)(x)
     
-    # LSTM Layer
-    x = LSTM(64)(x)
+#     # LSTM Layer
+#     x = LSTM(64)(x)
     
-    # Branch 2: Dense Features (Original + Meta)
-    dense_input = Input(shape=input_shape_dense, name='dense_input')
+#     # Branch 2: Dense Features (Original + Meta)
+#     dense_input = Input(shape=input_shape_dense, name='dense_input')
     
-    # Concatenate
-    concat = Concatenate()([x, dense_input])
+#     # Concatenate
+#     concat = Concatenate()([x, dense_input])
     
-    # Fully Connected Layers
-    fc = Dense(128, activation='relu')(concat)
-    fc = Dropout(0.3)(fc)
-    fc = Dense(64, activation='relu')(fc)
-    fc = Dropout(0.3)(fc)
+#     # Fully Connected Layers
+#     fc = Dense(128, activation='relu')(concat)
+#     fc = Dropout(0.3)(fc)
+#     fc = Dense(64, activation='relu')(fc)
+#     fc = Dropout(0.3)(fc)
     
-    output = Dense(1, activation='sigmoid')(fc)
+#     output = Dense(1, activation='sigmoid')(fc)
     
-    model = Model(inputs=[seq_input, dense_input], outputs=output)
-    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    return model
+#     model = Model(inputs=[seq_input, dense_input], outputs=output)
+#     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+#     return model
 
-cnn_lstm_model = build_cnn_lstm_model((13, 1), (18,))
-# print(cnn_lstm_model.summary())
+# cnn_lstm_model = build_cnn_lstm_model((13, 1), (18,))
+# # print(cnn_lstm_model.summary())
 
-# --- 5. Train Meta-Learner ---
-print("Training CNN-LSTM Meta-Learner...")
-history = cnn_lstm_model.fit(
-    [X_train_seq, X_train_dense], y_train,
-    epochs=20, # Paper mentions 20-30 epochs
-    batch_size=32,
-    validation_split=0.2,
-    verbose=1
-)
+# # --- 5. Train Meta-Learner ---
+# print("Training CNN-LSTM Meta-Learner...")
+# history = cnn_lstm_model.fit(
+#     [X_train_seq, X_train_dense], y_train,
+#     epochs=20, # Paper mentions 20-30 epochs
+#     batch_size=32,
+#     validation_split=0.2,
+#     verbose=1
+# )
 
-# --- 6. Evaluation ---
-print("Evaluating on Test Set...")
-loss, acc = cnn_lstm_model.evaluate([X_test_seq, X_test_dense], y_test)
-print(f"Final CNN-LSTM Test Accuracy: {acc:.4f}")
+# # --- 6. Evaluation ---
+# print("Evaluating on Test Set...")
+# loss, acc = cnn_lstm_model.evaluate([X_test_seq, X_test_dense], y_test)
+# print(f"Final CNN-LSTM Test Accuracy: {acc:.4f}")
 
 # Save the Keras model
-cnn_lstm_model.save(os.path.join(MODEL_DIR, 'cnn_lstm.h5'))
-print(f"All models saved to {MODEL_DIR}")
+# cnn_lstm_model.save(os.path.join(MODEL_DIR, 'cnn_lstm.h5'))
+# print(f"All models saved to {MODEL_DIR}")
+# print("Training complete. Using base models only.")
+print("All base models saved successfully in cardiosight_models folder.")
