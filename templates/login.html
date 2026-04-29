@@ -1,43 +1,36 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="glass-card animate-fade-in" style="max-width: 500px; margin: 50px auto;">
-    <h2 style="text-align: center; color: var(--primary-color);">Welcome Back</h2>
-    <p style="text-align: center; margin-bottom: 30px;">Securely access your heart health records.</p>
-
-    <!-- Google Login Button -->
-    <button id="google-login-btn" class="btn-primary"
-        style="width: 100%; background: white; color: #333; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; transition: 0.3s;">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"
-            style="width: 20px; margin-right: 10px;">
-        Sign in with Google
-    </button>
-
-    <div style="display: flex; align-items: center; margin: 20px 0;">
-        <div style="flex: 1; height: 1px; background: #ddd;"></div>
-        <span style="padding: 0 10px; color: #777;">OR</span>
-        <div style="flex: 1; height: 1px; background: #ddd;"></div>
+<div class="auth-container animate-flow">
+    <div style="text-align:center;margin-bottom:28px;">
+        <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--crimson-dark),var(--crimson));display:inline-flex;align-items:center;justify-content:center;animation:heartbeat 1.5s infinite;box-shadow:0 0 40px rgba(220,20,60,0.3);">
+            <i class="fas fa-heartbeat" style="color:white;font-size:1.6rem;"></i>
+        </div>
     </div>
-
-    <!-- Email Login Form -->
-    <form id="login-form">
-        <div class="form-group">
-            <label>Email Address</label>
-            <input type="email" id="email" class="form-control" placeholder="name@example.com" required>
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="password" class="form-control" placeholder="••••••••" required>
-        </div>
-
-        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Login</button>
-    </form>
-
-    <p style="text-align: center; margin-top: 20px;">
-        Don't have an account? <a href="/register" style="color: var(--secondary-color); font-weight: bold;">Register
-            Here</a>
-    </p>
-
-    <div id="auth-message" style="margin-top: 15px; text-align: center; font-size: 0.9rem;"></div>
+    <div class="auth-card">
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Sign in to your CardioSight account</p>
+        <button id="google-login-btn" class="google-btn">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width:20px;">
+            Continue with Google
+        </button>
+        <div class="divider"><span>or sign in with email</span></div>
+        <form id="login-form">
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="email" class="form-control" placeholder="name@example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </button>
+        </form>
+        <p style="text-align:center;margin-top:24px;font-size:0.88rem;color:var(--text-secondary);">
+            New here? <a href="/register" style="color:var(--crimson);font-weight:700;text-decoration:none;">Create Account</a>
+        </p>
+        <div id="auth-message" style="margin-top:16px;text-align:center;font-size:0.86rem;"></div>
+    </div>
 </div>
 {% endblock %}

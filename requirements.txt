@@ -4,7 +4,10 @@ numpy==1.26.4
 pandas==2.2.2
 scikit_learn==1.5.1
 Jinja2==3.1.4
-notebook==7.3.3
 pytesseract
 Pillow
 fpdf
+joblib==1.3.2
+gunicorn==21.2.0
+PyMuPDF==1.24.0
+firebase-admin==6.4.0

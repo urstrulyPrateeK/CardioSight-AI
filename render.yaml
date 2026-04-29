@@ -3,7 +3,7 @@ services:
     name: cardiosight-ai
     runtime: docker
     plan: free
-    healthCheckPath: /home
+    healthCheckPath: /health
     envVars:
       - key: FLASK_DEBUG
         value: "0"
@@ -23,7 +23,7 @@ services:
         sync: false
       - key: FIREBASE_APP_ID
         sync: false
-      - key: FIREBASE_CREDENTIALS_PATH
+      - key: FIREBASE_CREDENTIALS_JSON
         sync: false
       - key: BREVO_API_KEY
         sync: false

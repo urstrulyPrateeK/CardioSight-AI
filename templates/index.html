@@ -1,30 +1,134 @@
 {% extends "base.html" %}
-
 {% block content %}
-<header class="hero animate-fade-in">
-  <h1>Advanced Heart Health Prediction</h1>
-  <p>Leveraging AI and OCR technology to provide instant risk assessment from your medical reports.</p>
-  <a href="/predict_page" class="btn-primary"><i class="fas fa-stethoscope"></i> Check Your Heart Health</a>
+<header class="hero">
+  <!-- Anatomical heart SVG background -->
+  <div class="heart-svg-container">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <!-- Realistic heart shape with vessels -->
+      <defs>
+        <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#DC143C;stop-opacity:0.6"/>
+          <stop offset="100%" style="stop-color:#8B0000;stop-opacity:0.3"/>
+        </linearGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <!-- Heart body -->
+      <path d="M256 450 C180 380 40 300 40 190 C40 100 120 60 180 60 C220 60 250 85 256 100 C262 85 292 60 332 60 C392 60 472 100 472 190 C472 300 332 380 256 450Z" fill="url(#heartGrad)" filter="url(#glow)"/>
+      <!-- Aorta -->
+      <path class="vessel" d="M256 100 C256 60 230 30 200 10" stroke-width="3"/>
+      <path class="vessel" d="M256 100 C270 50 310 20 340 15" stroke-width="2.5"/>
+      <!-- Pulmonary arteries -->
+      <path class="vessel" d="M200 80 C160 50 120 60 100 40" stroke-width="2" style="animation-delay:0.5s"/>
+      <path class="vessel" d="M310 75 C360 40 400 55 430 30" stroke-width="2" style="animation-delay:1s"/>
+      <!-- Vena cava -->
+      <path class="vessel" d="M180 130 C140 100 100 110 70 80" stroke-width="2.5" style="stroke:rgba(100,20,60,0.5);animation-delay:1.5s"/>
+      <!-- Internal chambers suggestion -->
+      <path d="M256 200 L256 350" stroke="rgba(220,20,60,0.15)" stroke-width="1" stroke-dasharray="4 8"/>
+      <path d="M160 220 L350 220" stroke="rgba(220,20,60,0.1)" stroke-width="1" stroke-dasharray="4 8"/>
+      <!-- Blood flow dots along vessels -->
+      <circle cx="230" cy="50" r="3" fill="#FF2D55" opacity="0.6"><animate attributeName="cy" values="50;10;50" dur="2s" repeatCount="indefinite"/></circle>
+      <circle cx="290" cy="40" r="2.5" fill="#FF2D55" opacity="0.5"><animate attributeName="cy" values="40;15;40" dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx="140" cy="60" r="2" fill="#8B0000" opacity="0.4"><animate attributeName="cx" values="140;100;140" dur="3s" repeatCount="indefinite"/></circle>
+    </svg>
+  </div>
+
+  <!-- Floating blood cells -->
+  <div class="cell" style="width:120px;height:120px;top:10%;left:5%;animation-delay:0s;"></div>
+  <div class="cell" style="width:80px;height:80px;top:60%;left:85%;animation-delay:2s;"></div>
+  <div class="cell" style="width:60px;height:60px;top:30%;right:10%;animation-delay:4s;"></div>
+  <div class="cell" style="width:100px;height:100px;bottom:20%;left:15%;animation-delay:1s;"></div>
+
+  <div class="animate-flow" style="position:relative;">
+    <div class="tag" style="background:rgba(220,20,60,0.2);color:#FF8A80;margin-bottom:20px;border:1px solid rgba(220,20,60,0.3);">
+      <i class="fas fa-microscope"></i> Research-Grade Clinical AI
+    </div>
+    <h1>Where AI Meets the<br>Rhythm of Your Heart</h1>
+    <p>Our CNN-LSTM deep learning architecture flows through 5 specialized classifiers, analyzing 13 clinical parameters to reveal your cardiovascular risk with precision.</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="/predict_page" class="btn-primary" style="padding:16px 40px;font-size:1rem;">
+        <i class="fas fa-heartbeat"></i> Begin Assessment
+      </a>
+      <a href="/dashboard" class="btn-ghost">
+        <i class="fas fa-chart-line"></i> View Dashboard
+      </a>
+    </div>
+  </div>
 </header>
 
-<div class="glass-card animate-fade-in" style="margin-top: -50px; position: relative;">
-  <div class="grid-2">
-    <div style="padding: 20px;">
-      <h3><i class="fas fa-rocket"></i> Fast & Accurate</h3>
-      <p>Our machine learning models analyze 13 key health indicators to provide immediate risk probablity with high
-        accuracy.</p>
+<!-- Stats Strip -->
+<div style="max-width:900px;margin:-44px auto 0;position:relative;z-index:10;padding:0 20px;">
+  <div class="glass-card animate-flow-d1" style="padding:0;overflow:hidden;">
+    <div class="stats-strip">
+      <div>
+        <div class="stat-value">5</div>
+        <div class="stat-label">ML Classifiers</div>
+      </div>
+      <div>
+        <div class="stat-value">13</div>
+        <div class="stat-label">Clinical Features</div>
+      </div>
+      <div>
+        <div class="stat-value" style="font-size:1.2rem;">CNN-LSTM</div>
+        <div class="stat-label">Meta-Learner</div>
+      </div>
+      <div>
+        <div class="stat-value">OCR</div>
+        <div class="stat-label">Report Scanning</div>
+      </div>
     </div>
-    <div style="padding: 20px;">
-      <h3><i class="fas fa-file-alt"></i> OCR Integration</h3>
-      <p>No need to type manually. Simply upload a photo of your medical report, and we extract the data for you.</p>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div style="max-width:900px;margin:56px auto;padding:0 20px;">
+  <div style="text-align:center;margin-bottom:40px;" class="animate-flow-d1">
+    <h2 style="font-size:1.9rem;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--crimson),var(--arterial));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">The Pulse of Intelligence</h2>
+    <p style="color:var(--text-secondary);max-width:480px;margin:10px auto 0;font-size:0.95rem;">Like blood flowing through chambers of the heart, your data flows through our multi-stage AI architecture</p>
+  </div>
+
+  <div class="grid-2 animate-flow-d2">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#8B0000,#DC143C);">
+        <i class="fas fa-brain"></i>
+      </div>
+      <h3>CNN-LSTM Deep Architecture</h3>
+      <p>Our meta-learner synthesizes predictions from 5 base classifiers — LR, KNN, SVM, Random Forest, and Decision Tree — like chambers of the heart working in unison.</p>
     </div>
-    <div style="padding: 20px;">
-      <h3><i class="fas fa-user-md"></i> Doctor Dashboard</h3>
-      <p>Specialized view for medical professionals to track patient statistics and trends over time.</p>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#2D0A31,#7B2D8E);">
+        <i class="fas fa-file-medical-alt"></i>
+      </div>
+      <h3>OCR Report Scanner</h3>
+      <p>Upload your medical report and our OCR engine extracts all 13 clinical parameters automatically — supports scanned PDFs and images.</p>
     </div>
-    <div style="padding: 20px;">
-      <h3><i class="fas fa-lock"></i> Secure & Private</h3>
-      <p>Your data is processed securely and is never stored permanently on our servers.</p>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#004D40,#00E676);">
+        <i class="fas fa-file-pdf"></i>
+      </div>
+      <h3>Clinical PDF Reports</h3>
+      <p>Generate comprehensive reports with detailed risk analysis, parameter breakdown, and personalized medical recommendations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:linear-gradient(135deg,#78350F,#FFB300);">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h3>Secure & Authenticated</h3>
+      <p>Firebase authentication protects your health data. Reports are generated on-demand and never stored permanently.</p>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div style="max-width:900px;margin:0 auto 64px;padding:0 20px;">
+  <div class="glass-card animate-flow-d3" style="background:linear-gradient(135deg,#0a0015,#1a0020,#3D0018);text-align:center;color:white;overflow:hidden;position:relative;">
+    <div class="cell" style="width:200px;height:200px;top:-50px;right:-30px;"></div>
+    <div class="vessel-glow" style="top:-50px;left:-50px;"></div>
+    <div style="position:relative;">
+      <h2 style="font-size:1.7rem;font-weight:800;margin-bottom:12px;">Ready to Listen to Your Heart?</h2>
+      <p style="opacity:0.7;margin-bottom:28px;font-size:0.95rem;">AI-powered risk assessment in under 60 seconds</p>
+      <a href="/predict_page" class="btn-primary" style="background:linear-gradient(135deg,#DC143C,#FF2D55);box-shadow:0 4px 30px rgba(220,20,60,0.4);">
+        <i class="fas fa-arrow-right"></i> Start Now
+      </a>
     </div>
   </div>
 </div>

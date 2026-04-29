@@ -1,136 +1,66 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="glass-card animate-fade-in">
-    <h2 style="text-align: center; margin-bottom: 30px;">Heart Disease Risk Assessment</h2>
-
-    <!-- OCR Upload Section -->
-    <div class="drop-zone" id="drop-zone">
-        <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #aaa;"></i>
-        <p style="margin-top: 10px;">Drag & Drop your Medical Report (Image/PDF) here / Click to Upload</p>
-        <span id="file-name" style="color: var(--secondary-color); font-weight: bold;"></span>
-        <input type="file" id="file-input" style="display: none;" accept="image/*,.pdf">
-        <br>
-        <button id="extract-btn" class="btn-primary" style="margin-top: 15px; display: none;">
-            <i class="fas fa-magic"></i> Extract Data Automagically
-        </button>
-        <p id="ocr-status" style="margin-top: 10px; font-style: italic; color: #666;"></p>
+<div style="max-width:900px;margin:0 auto;padding:32px 20px;">
+  <div class="animate-flow" style="margin-bottom:28px;">
+    <h1 style="font-size:1.8rem;font-weight:900;letter-spacing:-0.5px;background:linear-gradient(135deg,var(--crimson),var(--arterial));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+      <i class="fas fa-heartbeat" style="color:var(--crimson);animation:heartbeat 1.5s infinite;-webkit-text-fill-color:var(--crimson);"></i> Heart Disease Risk Assessment
+    </h1>
+    <p style="color:var(--text-secondary);margin-top:6px;">Enter clinical parameters or upload a medical report</p>
+  </div>
+  {% if error %}
+  <div class="alert-box high animate-flow" style="margin-bottom:24px;"><i class="fas fa-exclamation-circle"></i><span>{{ error }}</span></div>
+  {% endif %}
+  <div class="glass-card animate-flow" style="margin-bottom:0;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div class="section-icon" style="background:linear-gradient(135deg,#2D0A31,#7B2D8E);"><i class="fas fa-magic"></i></div>
+      <div><h3 class="section-title" style="margin:0;">Smart Report Scanner</h3><p style="color:var(--text-secondary);font-size:0.82rem;margin:0;">Auto-extract data from medical reports via OCR</p></div>
     </div>
-
-    <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.1); margin: 30px 0;">
-
+    <div class="drop-zone" id="drop-zone">
+      <i class="fas fa-cloud-upload-alt"></i>
+      <p style="margin-top:8px;color:var(--text-secondary);font-size:0.9rem;">Drag & drop or <strong style="color:var(--crimson);">click to browse</strong></p>
+      <span id="file-name" style="color:var(--crimson-light);font-weight:600;font-size:0.88rem;"></span>
+      <input type="file" id="file-input" style="display:none;" accept="image/*,.pdf"><br>
+      <button id="extract-btn" class="btn-primary" style="margin-top:14px;display:none;padding:11px 26px;font-size:0.86rem;"><i class="fas fa-magic"></i> Extract Data</button>
+      <p id="ocr-status" style="margin-top:10px;font-size:0.83rem;color:var(--text-muted);"></p>
+    </div>
+  </div>
+  <hr class="section-divider">
+  <div class="glass-card animate-flow-d1">
     <form action="/process_prediction" method="POST" id="predict-form">
-
-        <h3 style="margin-bottom: 20px; color: var(--primary-color);">Patient Information</h3>
-        <div class="grid-2">
-            <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" name="name" class="form-control" placeholder="John Doe" required>
-            </div>
-            <div class="form-group">
-                <label>Email (Optional)</label>
-                <input type="email" name="email" class="form-control" placeholder="john@example.com">
-            </div>
-        </div>
-
-        <h3 style="margin-bottom: 20px; color: var(--primary-color);">Clinical Parameters</h3>
-        <div class="grid-2">
-            <div class="form-group">
-                <label>Age</label>
-                <input type="number" name="age" id="age" class="form-control" required min="1" max="120">
-            </div>
-            <div class="form-group">
-                <label>Gender</label>
-                <select name="gender" id="gender" class="form-control">
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Chest Pain Type (CP)</label>
-                <select name="cp" class="form-control">
-                    <option value="0">Typical Angina</option>
-                    <option value="1">Atypical Angina</option>
-                    <option value="2">Non-anginal Pain</option>
-                    <option value="3">Asymptomatic</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Resting Blood Pressure (mm Hg)</label>
-                <input type="number" name="trestbps" id="trestbps" class="form-control" placeholder="e.g. 120">
-            </div>
-
-            <div class="form-group">
-                <label>Serum Cholestoral (mg/dl)</label>
-                <input type="number" name="chol" id="chol" class="form-control" placeholder="e.g. 200">
-            </div>
-
-            <div class="form-group">
-                <label>Fasting Blood Sugar > 120 mg/dl</label>
-                <select name="fbs" id="fbs" class="form-control">
-                    <option value="0">False</option>
-                    <option value="1">True</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Resting ECG Results</label>
-                <select name="restecg" class="form-control">
-                    <option value="0">Normal</option>
-                    <option value="1">ST-T Wave Abnormality</option>
-                    <option value="2">Left Ventricular Hypertrophy</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Max Heart Rate Achieved</label>
-                <input type="number" name="thalach" id="thalach" class="form-control" placeholder="e.g. 150">
-            </div>
-
-            <div class="form-group">
-                <label>Exercise Induced Angina</label>
-                <select name="exang" class="form-control">
-                    <option value="0">No</option>
-                    <option value="1">Yes</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>ST Depression (Oldpeak)</label>
-                <input type="number" step="0.1" name="oldpeak" class="form-control" value="0">
-            </div>
-
-            <div class="form-group">
-                <label>Slope of Peak Exercise ST</label>
-                <select name="slope" class="form-control">
-                    <option value="0">Upsloping</option>
-                    <option value="1">Flat</option>
-                    <option value="2">Downsloping</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Number of Major Vessels (0-3)</label>
-                <input type="number" name="ca" class="form-control" value="0" min="0" max="3">
-            </div>
-
-            <div class="form-group">
-                <label>Thalassemia</label>
-                <select name="thal" class="form-control">
-                    <option value="1">Normal</option>
-                    <option value="2">Fixed Defect</option>
-                    <option value="3">Reversable Defect</option>
-                </select>
-            </div>
-        </div>
-
-        <div style="text-align: center; margin-top: 40px;">
-            <button type="submit" class="btn-primary" style="font-size: 1.2rem; padding: 20px 60px;">
-                Analyze Risk
-            </button>
-        </div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
+        <div class="section-icon" style="background:linear-gradient(135deg,var(--crimson-dark),var(--crimson));"><i class="fas fa-user"></i></div>
+        <h3 class="section-title" style="margin:0;">Patient Information</h3>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Full Name</label><input type="text" name="name" class="form-control" placeholder="John Doe" required></div>
+        <div class="form-group"><label>Email (for report)</label><input type="email" name="email" class="form-control" placeholder="john@example.com"></div>
+      </div>
+      <hr class="section-divider" style="margin:26px 0;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;">
+        <div class="section-icon" style="background:linear-gradient(135deg,#004D40,#00E676);"><i class="fas fa-heartbeat"></i></div>
+        <div><h3 class="section-title" style="margin:0;">Clinical Parameters</h3><p style="color:var(--text-secondary);font-size:0.8rem;margin:0;">13 features analyzed by the CNN-LSTM ensemble</p></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Age</label><input type="number" name="age" id="age" class="form-control" required min="1" max="120" placeholder="e.g. 55"></div>
+        <div class="form-group"><label>Gender</label><select name="gender" id="gender" class="form-control"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+        <div class="form-group"><label>Chest Pain Type</label><select name="cp" class="form-control"><option value="0">Typical Angina</option><option value="1">Atypical Angina</option><option value="2">Non-anginal Pain</option><option value="3">Asymptomatic</option></select></div>
+        <div class="form-group"><label>Resting Blood Pressure (mm Hg)</label><input type="number" name="trestbps" id="trestbps" class="form-control" placeholder="e.g. 120"></div>
+        <div class="form-group"><label>Serum Cholesterol (mg/dl)</label><input type="number" name="chol" id="chol" class="form-control" placeholder="e.g. 200"></div>
+        <div class="form-group"><label>Fasting Blood Sugar > 120</label><select name="fbs" id="fbs" class="form-control"><option value="0">No (≤ 120 mg/dl)</option><option value="1">Yes (> 120 mg/dl)</option></select></div>
+        <div class="form-group"><label>Resting ECG</label><select name="restecg" class="form-control"><option value="0">Normal</option><option value="1">ST-T Wave Abnormality</option><option value="2">LV Hypertrophy</option></select></div>
+        <div class="form-group"><label>Max Heart Rate</label><input type="number" name="thalach" id="thalach" class="form-control" placeholder="e.g. 150"></div>
+        <div class="form-group"><label>Exercise Induced Angina</label><select name="exang" class="form-control"><option value="0">No</option><option value="1">Yes</option></select></div>
+        <div class="form-group"><label>ST Depression (Oldpeak)</label><input type="number" step="0.1" name="oldpeak" class="form-control" value="0"></div>
+        <div class="form-group"><label>Slope of Peak ST</label><select name="slope" class="form-control"><option value="0">Upsloping</option><option value="1">Flat</option><option value="2">Downsloping</option></select></div>
+        <div class="form-group"><label>Major Vessels (0-3)</label><input type="number" name="ca" class="form-control" value="0" min="0" max="3"></div>
+        <div class="form-group"><label>Thalassemia</label><select name="thal" class="form-control"><option value="1">Normal</option><option value="2">Fixed Defect</option><option value="3">Reversable Defect</option></select></div>
+      </div>
+      <div style="text-align:center;margin-top:36px;">
+        <button type="submit" class="btn-primary" id="submit-btn" style="font-size:1.05rem;padding:18px 56px;">
+          <i class="fas fa-brain"></i> Analyze Risk
+        </button>
+      </div>
     </form>
+  </div>
 </div>
 {% endblock %}

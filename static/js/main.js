@@ -1,36 +1,36 @@
-// Import Firebase (handled via CDN in base.html)
-
 document.addEventListener('DOMContentLoaded', () => {
+
+    // --- NAVBAR SCROLL EFFECT ---
+    const navbar = document.getElementById('main-navbar');
+    if (navbar) {
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 10);
+        });
+    }
+
     // --- FIREBASE INIT ---
-    // The config is injected by the server into a global variable in base.html
-    if (typeof firebaseConfig !== 'undefined') {
+    if (typeof firebaseConfig !== 'undefined' && firebaseConfig.apiKey) {
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-        // --- AUTH STATE LISTENER ---
         auth.onAuthStateChanged(async (user) => {
-            const navLinks = document.querySelector('.nav-links');
+            const navLinks = document.getElementById('nav-links');
             if (user) {
-                // User is signed in.
-                console.log("Logged in as:", user.email);
-
-                // Redirect if on login/register/root page
                 const path = window.location.pathname;
                 if (path === '/' || path === '/login' || path === '/register') {
                     window.location.href = '/home';
                 }
 
-                // Update Navbar
-                const loginLink = document.querySelector('a[href="/login"]');
+                const loginLink = document.getElementById('login-link');
                 if (loginLink) loginLink.style.display = 'none';
 
-                // Check if logout button exists, if not add it
                 if (!document.getElementById('logout-btn')) {
                     const logoutBtn = document.createElement('a');
                     logoutBtn.id = 'logout-btn';
-                    logoutBtn.href = "#";
-                    logoutBtn.textContent = "Logout (" + user.displayName?.split(' ')[0] + ")";
+                    logoutBtn.href = '#';
+                    logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> ' + (user.displayName ? user.displayName.split(' ')[0] : 'Logout');
+                    logoutBtn.style.cssText = 'background:var(--bg-card-alt);color:var(--text-primary);padding:8px 18px;border-radius:8px;font-size:0.85rem;border:1px solid var(--border);';
                     logoutBtn.addEventListener('click', (e) => {
                         e.preventDefault();
                         auth.signOut().then(() => window.location.href = '/');
@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     navLinks.appendChild(logoutBtn);
                 }
 
-                // Inject Token into Forms
                 const predictForm = document.getElementById('predict-form');
                 if (predictForm) {
                     const token = await user.getIdToken();
@@ -52,57 +51,51 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     tokenInput.value = token;
 
-                    // Auto-fill name/email
-                    if (document.querySelector('input[name="name"]'))
-                        document.querySelector('input[name="name"]').value = user.displayName;
-                    if (document.querySelector('input[name="email"]'))
-                        document.querySelector('input[name="email"]').value = user.email;
+                    const nameField = document.querySelector('input[name="name"]');
+                    const emailField = document.querySelector('input[name="email"]');
+                    if (nameField && !nameField.value) nameField.value = user.displayName || '';
+                    if (emailField && !emailField.value) emailField.value = user.email || '';
                 }
-
             } else {
-                // User is signed out.
-                console.log("User logged out");
                 const logoutBtn = document.getElementById('logout-btn');
                 if (logoutBtn) logoutBtn.remove();
-
-                const loginLink = document.querySelector('a[href="/login"]');
-                if (loginLink) loginLink.style.display = 'inline-block';
+                const loginLink = document.getElementById('login-link');
+                if (loginLink) loginLink.style.display = 'inline-flex';
             }
         });
 
-        // --- GOOGLE LOGIN ---
+        // Google Login
         const googleBtn = document.getElementById('google-login-btn');
         if (googleBtn) {
             googleBtn.addEventListener('click', () => {
-                auth.signInWithPopup(googleProvider).then((result) => {
-                    // Success
-                    window.location.href = '/home';
-                }).catch((error) => {
-                    alert(error.message);
-                });
+                auth.signInWithPopup(googleProvider)
+                    .then(() => window.location.href = '/home')
+                    .catch((error) => showAuthError(error.message));
             });
         }
 
-        // --- EMAIL LOGIN ---
+        // Email Login
         const loginForm = document.getElementById('login-form');
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
+                const btn = loginForm.querySelector('button[type="submit"]');
+                btn.innerHTML = '<span class="spinner"></span> Signing in...';
+                btn.disabled = true;
 
                 auth.signInWithEmailAndPassword(email, password)
-                    .then(() => {
-                        window.location.href = '/home';
-                    })
+                    .then(() => window.location.href = '/home')
                     .catch((error) => {
-                        document.getElementById('auth-message').textContent = error.message;
-                        document.getElementById('auth-message').style.color = 'red';
+                        showAuthError(error.message);
+                        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                        btn.disabled = false;
                     });
             });
         }
 
-        // --- REGISTRATION ---
+        // Registration
         const regForm = document.getElementById('register-form');
         if (regForm) {
             regForm.addEventListener('submit', (e) => {
@@ -112,103 +105,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 const name = document.getElementById('reg-name').value;
                 const phone = document.getElementById('reg-phone').value;
                 const dob = document.getElementById('reg-dob').value;
+                const btn = regForm.querySelector('button[type="submit"]');
+                btn.innerHTML = '<span class="spinner"></span> Creating...';
+                btn.disabled = true;
 
                 auth.createUserWithEmailAndPassword(email, password)
                     .then((userCredential) => {
-                        const user = userCredential.user;
-                        return user.updateProfile({ displayName: name })
-                            .then(() => {
-                                // Save extra details to backend
-                                return fetch('/save_profile', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({
-                                        uid: user.uid,
-                                        email: email,
-                                        fullName: name,
-                                        phone: phone,
-                                        dob: dob
-                                    })
-                                });
-                            });
+                        return userCredential.user.updateProfile({ displayName: name })
+                            .then(() => fetch('/save_profile', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ uid: userCredential.user.uid, email, fullName: name, phone, dob })
+                            }));
                     })
-                    .then(() => {
-                        alert("Account created successfully!");
-                        window.location.href = '/home';
-                    })
+                    .then(() => window.location.href = '/home')
                     .catch((error) => {
-                        document.getElementById('auth-message').textContent = error.message;
-                        document.getElementById('auth-message').style.color = 'red';
+                        showAuthError(error.message);
+                        btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+                        btn.disabled = false;
                     });
             });
         }
     }
 
-    // --- OCR LOGIC (Existing) ---
-    // (Kept separate to avoid breaking existing functionality, assuming the previous main.js logic is merged or this replaces specific parts.
-    // For safety, I included the previous dropzone logic below)
+    function showAuthError(msg) {
+        const el = document.getElementById('auth-message');
+        if (el) {
+            el.textContent = msg;
+            el.style.cssText = 'color:#FF8A80;background:rgba(220,20,60,0.1);padding:12px;border-radius:8px;border:1px solid rgba(220,20,60,0.2);';
+        }
+    }
 
+    // --- OCR LOGIC ---
     const dropZone = document.getElementById('drop-zone');
     if (dropZone) {
-        // ... (Previous OCR code logic) ...
         const fileInput = document.getElementById('file-input');
         const extractBtn = document.getElementById('extract-btn');
-        // Re-implement listeners for seamlessness
-        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('click', (e) => {
+            if (e.target !== extractBtn && !extractBtn.contains(e.target)) fileInput.click();
+        });
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
+            dropZone.classList.remove('dragover');
             if (e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFile(); }
         });
         fileInput.addEventListener('change', handleFile);
 
         function handleFile() {
             if (fileInput.files.length > 0) {
-                document.getElementById('file-name').textContent = `Selected: ${fileInput.files[0].name}`;
-                extractBtn.style.display = 'inline-block';
+                document.getElementById('file-name').textContent = fileInput.files[0].name;
+                extractBtn.style.display = 'inline-flex';
             }
         }
 
         extractBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const ocrStatus = document.getElementById('ocr-status');
-            ocrStatus.textContent = "Scanning...";
+            extractBtn.innerHTML = '<span class="spinner"></span> Scanning...';
+            extractBtn.disabled = true;
+            ocrStatus.textContent = '';
             const fd = new FormData();
             fd.append('file', fileInput.files[0]);
             try {
                 const res = await fetch('/extract_from_report', { method: 'POST', body: fd });
                 const data = await res.json();
                 if (data.success) {
-                    ocrStatus.textContent = "Success!";
+                    ocrStatus.innerHTML = '<span style="color:var(--success);font-weight:600;"><i class="fas fa-check-circle"></i> Data extracted successfully!</span>';
                     populateForm(data.data);
                 } else {
-                    ocrStatus.textContent = "Failed.";
+                    ocrStatus.innerHTML = '<span style="color:var(--danger);"><i class="fas fa-times-circle"></i> Extraction failed</span>';
                 }
-            } catch (e) { console.error(e); }
+            } catch (err) {
+                ocrStatus.innerHTML = '<span style="color:var(--danger);"><i class="fas fa-times-circle"></i> Error processing file</span>';
+            }
+            extractBtn.innerHTML = '<i class="fas fa-magic"></i> Extract Data';
+            extractBtn.disabled = false;
         });
     }
 
     function populateForm(data) {
-        console.log("OCR extracted data:", data);
         const setField = (name, val) => {
             const el = document.querySelector(`[name="${name}"]`);
-            if (el && val !== undefined && val !== null) {
-                el.value = val;
-            }
+            if (el && val !== undefined && val !== null) el.value = val;
         };
-        if (data.name) setField('name', data.name);
-        if (data.age) setField('age', data.age);
-        if (data.gender) setField('gender', data.gender);
-        if (data.cp) setField('cp', data.cp);
-        if (data.trestbps) setField('trestbps', data.trestbps);
-        if (data.chol) setField('chol', data.chol);
-        if (data.fbs) setField('fbs', data.fbs);
-        if (data.restecg) setField('restecg', data.restecg);
-        if (data.thalach) setField('thalach', data.thalach);
-        if (data.exang) setField('exang', data.exang);
-        if (data.oldpeak) setField('oldpeak', data.oldpeak);
-        if (data.slope) setField('slope', data.slope);
-        if (data.ca) setField('ca', data.ca);
-        if (data.thal) setField('thal', data.thal);
+        Object.keys(data).forEach(key => setField(key, data[key]));
+    }
+
+    // --- FORM SUBMIT LOADING STATE ---
+    const predictForm = document.getElementById('predict-form');
+    if (predictForm) {
+        predictForm.addEventListener('submit', () => {
+            const btn = document.getElementById('submit-btn');
+            if (btn) {
+                btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+                btn.disabled = true;
+            }
+        });
     }
 });

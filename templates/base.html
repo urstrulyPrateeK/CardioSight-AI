@@ -1,55 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CardioSight | Advanced Heart AI</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Chart.js -->
+    <title>CardioSight AI | Advanced Heart Disease Risk Assessment</title>
+    <meta name="description" content="CNN-LSTM powered heart disease risk assessment analyzing 13 clinical parameters through 5 specialized classifiers.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- FIREBASE SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-
-    <script>
-        // Inject Configuration from Flask to JS
-        const firebaseConfig = {{ firebase_config | tojson }};
-    </script>
-
-    <!-- Custom CSS -->
+    <script>const firebaseConfig = {{ firebase_config | tojson }};</script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
 </head>
-
 <body>
+    <!-- Blood particle canvas background -->
+    <canvas id="heart-canvas"></canvas>
 
-    <nav class="navbar">
-        <a href="/home" class="logo"><i class="fas fa-heartbeat"></i> CardioSight</a>
-        <div class="nav-links">
+    <nav class="navbar" id="main-navbar">
+        <a href="/home" class="logo">
+            <i class="fas fa-heartbeat"></i> CardioSight
+        </a>
+        <div class="nav-links" id="nav-links">
             <a href="/home">Home</a>
             <a href="/predict_page">Predict</a>
-            <a href="/dashboard">Doctor Dashboard</a>
-
-            <!-- Auth Links (JS will toggle these based on state) -->
-            <a href="/login" id="login-link">Login</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/login" id="login-link" class="btn-primary" style="padding:9px 24px;font-size:0.82rem;">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
         </div>
     </nav>
-
-    <div class="content">
-        {% block content %}{% endblock %}
-    </div>
-
+    <div class="content">{% block content %}{% endblock %}</div>
     <footer>
-        <p>&copy; 2025 CardioSight AI | Secure Patient Data System</p>
+        <p style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <i class="fas fa-heartbeat" style="color:var(--crimson);animation:heartbeat 1.5s infinite;"></i>
+            &copy; 2026 CardioSight AI &mdash; CNN-LSTM Deep Learning Architecture
+        </p>
     </footer>
-
-    <!-- Main JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
+    <script>
+    // Blood particle system
+    (function(){
+        const c=document.getElementById('heart-canvas');
+        if(!c)return;
+        const ctx=c.getContext('2d');
+        let w,h,particles=[];
+        function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;}
+        resize();window.addEventListener('resize',resize);
 
+        class Particle{
+            constructor(){this.reset();}
+            reset(){
+                this.x=Math.random()*w;
+                this.y=h+10;
+                this.size=Math.random()*3+1;
+                this.speedY=-(Math.random()*0.8+0.2);
+                this.speedX=Math.random()*0.4-0.2;
+                this.opacity=Math.random()*0.3+0.05;
+                this.life=0;this.maxLife=300+Math.random()*400;
+                this.pulse=Math.random()*Math.PI*2;
+            }
+            update(){
+                this.y+=this.speedY;
+                this.x+=this.speedX+Math.sin(this.life*0.01)*0.3;
+                this.life++;
+                this.pulse+=0.05;
+                let lifeRatio=this.life/this.maxLife;
+                this.currentOpacity=this.opacity*Math.sin(lifeRatio*Math.PI)*(0.7+0.3*Math.sin(this.pulse));
+                if(this.life>this.maxLife||this.y<-10)this.reset();
+            }
+            draw(){
+                ctx.beginPath();
+                ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+                ctx.fillStyle=`rgba(220,20,60,${this.currentOpacity})`;
+                ctx.fill();
+                // Glow
+                ctx.beginPath();
+                ctx.arc(this.x,this.y,this.size*3,0,Math.PI*2);
+                ctx.fillStyle=`rgba(220,20,60,${this.currentOpacity*0.15})`;
+                ctx.fill();
+            }
+        }
+
+        for(let i=0;i<60;i++)particles.push(new Particle());
+
+        function animate(){
+            ctx.clearRect(0,0,w,h);
+            particles.forEach(p=>{p.update();p.draw();});
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+    </script>
+</body>
 </html>

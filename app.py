@@ -49,14 +49,16 @@ try:
     if not firebase_admin:
         print("WARNING: firebase_admin not installed; Firebase features disabled.")
         db = None
-    elif not os.path.exists(config.FIREBASE_CREDENTIALS_PATH):
-        print("WARNING: Firebase Admin JSON not found. Please place it in the root directory.")
-        db = None
     else:
-        cred = credentials.Certificate(config.FIREBASE_CREDENTIALS_PATH)
-        firebase_admin.initialize_app(cred)
-        db = firestore.client()
-        print("Firebase Admin SDK Initialized Successfully.")
+        _cred_path = config.FIREBASE_CREDENTIALS_PATH
+        if os.path.exists(_cred_path):
+            cred = credentials.Certificate(_cred_path)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            print("Firebase Admin SDK Initialized Successfully.")
+        else:
+            print(f"WARNING: Firebase credentials not found at '{_cred_path}'. Firebase disabled.")
+            db = None
 except Exception as e:
     print(f"Error initializing Firebase: {e}")
     db = None
@@ -66,10 +68,14 @@ MODEL_DIR = 'cardiosight_models'
 try:
     scaler = joblib.load(os.path.join(MODEL_DIR, 'scaler.pkl'))
     base_models = {name: joblib.load(os.path.join(MODEL_DIR, f'{name}.pkl')) for name in ['LR', 'KNN', 'SVM', 'RF', 'DT']}
-    meta_model = load_model(os.path.join(MODEL_DIR, 'cnn_lstm.h5')) if load_model else None
-    print("CardioSight Models Loaded.")
-except:
-    print("Model loading failed.")
+    if load_model:
+        meta_model = load_model(os.path.join(MODEL_DIR, 'cnn_lstm.h5'))
+    else:
+        meta_model = None
+        print("WARNING: TensorFlow not available. Meta-learner disabled.")
+    print(f"CardioSight Models Loaded. Base: {list(base_models.keys())}, Meta: {'YES' if meta_model else 'NO'}")
+except Exception as e:
+    print(f"Model loading failed: {e}")
     scaler, base_models, meta_model = None, None, None
 
 # --- CONTEXT PROCESSOR ---
@@ -78,6 +84,10 @@ def inject_firebase_config():
     return dict(firebase_config=config.FIREBASE_CLIENT_CONFIG)
 
 # --- ROUTES ---
+
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'ok'}), 200
 
 @app.route('/', methods=['GET'])
 def index():
@@ -169,24 +179,27 @@ def process_prediction():
         gender_val = 1 if gender == "Male" else 0
         raw_features = np.array([[age, gender_val, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]])
         
-        if scaler and meta_model:
-            scaled_features = scaler.transform(raw_features)
-            base_probs = []
-            base_details = {}
-            for n, m in base_models.items():
-                p = m.predict_proba(scaled_features)[0][1]
-                base_probs.append(p)
-                base_details[n] = round(p*100, 2)
-            
-            base_probs = np.array([base_probs])
+        if not scaler or not base_models:
+            return render_template('predict.html', error='Models not loaded. Please contact administrator.'), 500
+
+        scaled_features = scaler.transform(raw_features)
+        base_probs = []
+        base_details = {}
+        for n, m in base_models.items():
+            p = m.predict_proba(scaled_features)[0][1]
+            base_probs.append(p)
+            base_details[n] = round(p*100, 2)
+        
+        base_probs_arr = np.array([base_probs])
+
+        if meta_model:
             input_seq = scaled_features.reshape(1, 13, 1)
-            input_dense = np.hstack([scaled_features, base_probs])
-            
+            input_dense = np.hstack([scaled_features, base_probs_arr])
             prediction_prob = meta_model.predict([input_seq, input_dense])[0][0]
             probability_percent = round(float(prediction_prob) * 100, 2)
         else:
-            probability_percent = 45.5
-            base_details = {'RF': 40, 'LR': 50}
+            # Fallback: average of base model probabilities
+            probability_percent = round(float(np.mean(base_probs)) * 100, 2)
 
         if probability_percent < 30: risk_level, risk_color = "Low", "green"
         elif probability_percent < 70: risk_level, risk_color = "Moderate", "orange"
@@ -632,6 +645,9 @@ def send_report():
         form_data = request.form
         recipient_email = form_data.get('email', '')
         name = form_data.get('name', 'Patient')
+        probability = form_data.get('probability', '0')
+        risk_level = form_data.get('risk_level', 'Unknown')
+        risk_color = form_data.get('risk_color', 'orange')
 
         if not recipient_email:
             return jsonify({'success': False, 'error': 'No email address provided.'}), 400
@@ -649,23 +665,48 @@ def send_report():
         with open(report_path, 'rb') as f:
             pdf_base64 = base64.b64encode(f.read()).decode('utf-8')
 
-        email_body = (f"Dear {name},\n\n"
-            "Thank you for using CardioSight, our Advanced AI-Powered Heart Disease Risk Assessment System.\n\n"
-            "Please find your detailed clinical report attached to this email. This report contains:\n"
-            "  - Your complete risk assessment results\n"
-            "  - Analysis from our CNN-LSTM deep learning architecture\n"
-            "  - Detailed clinical parameter explanations\n"
-            "  - Personalized health recommendations\n\n"
-            "IMPORTANT: This report is AI-generated and is for informational purposes only. "
-            "Please consult a qualified healthcare professional for medical advice.\n\n"
-            "Report generated from: CardioSight AI (cardiosight.onrender.com)\n\n"
-            "Stay healthy,\nThe CardioSight AI Team")
+        color_hex_map = {'red': '#DC2626', 'orange': '#F59E0B', 'green': '#10B981'}
+        risk_hex = color_hex_map.get(risk_color, '#F59E0B')
+
+        html_email = f"""<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f0f2f5;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:20px auto;">
+<tr><td style="background:linear-gradient(135deg,#6C35DE,#3B82F6);padding:32px 24px;text-align:center;border-radius:12px 12px 0 0;">
+<h1 style="color:white;margin:0;font-size:26px;letter-spacing:1px;">&#9829; CardioSight AI</h1>
+<p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:14px;">Advanced Heart Disease Risk Assessment</p>
+</td></tr>
+<tr><td style="background:white;padding:32px 28px;">
+<p style="color:#1a1a2e;font-size:16px;margin:0 0 16px;">Dear <strong>{name}</strong>,</p>
+<p style="color:#4a4a68;line-height:1.6;">Thank you for choosing CardioSight AI for your cardiovascular health assessment. We are pleased to share your comprehensive clinical report.</p>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+<tr><td style="background:#f8f9fc;border-radius:10px;padding:24px;text-align:center;border:1px solid #e8e8f0;">
+<p style="margin:0 0 6px;color:#6B7280;font-size:13px;text-transform:uppercase;letter-spacing:1px;">Assessment Result</p>
+<h2 style="margin:0;color:{risk_hex};font-size:30px;">{risk_level} Risk &mdash; {probability}%</h2>
+</td></tr></table>
+<p style="color:#4a4a68;line-height:1.6;">Your attached PDF report includes:</p>
+<ul style="color:#4a4a68;line-height:1.8;padding-left:20px;">
+<li>Comprehensive risk analysis from our <strong>CNN-LSTM deep learning</strong> architecture</li>
+<li>Individual predictions from 5 clinical classification models</li>
+<li>Detailed clinical parameter evaluation with medical significance</li>
+<li>Personalized lifestyle and clinical recommendations</li>
+</ul>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+<tr><td style="background:#FFFBEB;border-left:4px solid #F59E0B;padding:14px 16px;border-radius:0 6px 6px 0;">
+<p style="margin:0;color:#92400E;font-size:13px;"><strong>&#9888; Medical Disclaimer:</strong> This report is generated by an AI system for informational and educational purposes only. It does not constitute medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional before making any medical decisions.</p>
+</td></tr></table>
+<p style="color:#4a4a68;line-height:1.6;">Should you have any questions regarding your assessment, we encourage you to discuss the findings with your healthcare provider.</p>
+<p style="color:#4a4a68;margin:24px 0 0;">With best regards,<br><strong style="color:#6C35DE;">The CardioSight AI Clinical Team</strong></p>
+</td></tr>
+<tr><td style="background:#f8f9fc;padding:20px;text-align:center;border-radius:0 0 12px 12px;border-top:1px solid #e8e8f0;">
+<p style="margin:0 0 4px;color:#9CA3AF;font-size:11px;">&copy; 2026 CardioSight AI | Powered by CNN-LSTM Deep Learning Architecture</p>
+<p style="margin:0;color:#9CA3AF;font-size:11px;">cardiosight.onrender.com | This is an automated message</p>
+</td></tr></table></body></html>"""
 
         payload = json.dumps({
             "sender": {"name": "CardioSight AI", "email": sender_email},
             "to": [{"email": recipient_email, "name": name}],
-            "subject": "CardioSight - Your Heart Disease Risk Assessment Report",
-            "textContent": email_body,
+            "subject": f"CardioSight AI — Your Heart Disease Risk Assessment Report ({risk_level} Risk)",
+            "htmlContent": html_email,
             "attachment": [{"content": pdf_base64, "name": f"CardioSight_Report_{name.replace(' ', '_')}.pdf"}]
         }).encode('utf-8')
 
@@ -679,17 +720,16 @@ def send_report():
         except urllib.error.HTTPError as http_err:
             error_body = http_err.read().decode('utf-8')
             print(f"Brevo error {http_err.code}: {error_body}")
-            return jsonify({'success': False, 'error': f'Email error ({http_err.code}): {error_body}'}), 500
+            # Parse error details for user
+            try:
+                err_json = json.loads(error_body)
+                err_msg = err_json.get('message', error_body[:200])
+            except Exception:
+                err_msg = error_body[:200]
+            return jsonify({'success': False, 'error': f'Email service error ({http_err.code}): {err_msg}'}), 500
 
         try: os.remove(report_path)
         except: pass
-
-        return jsonify({'success': True, 'message': 'Report emailed successfully!'})
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
 
         return jsonify({'success': True, 'message': 'Report emailed successfully!'})
 
