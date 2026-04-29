@@ -15,8 +15,8 @@ __pycache__/
 # Firebase credentials (SECURITY - never commit secrets)
 cardiosight-d4414-firebase-adminsdk-fbsvc-75676d467e.json
 
-# Trained models (built during Docker build)
-cardiosight_models/
+# Trained models - included in repo for deployment
+# cardiosight_models/
 
 # Uploads directory (user-generated at runtime)
 uploads/

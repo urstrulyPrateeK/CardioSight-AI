@@ -20,14 +20,11 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install TensorFlow CPU (separate layer for caching - large package)
-RUN pip install --no-cache-dir tensorflow-cpu==2.15.1
-
-# Copy the rest of the application
+# Copy the rest of the application (includes pre-trained models)
 COPY . .
 
-# Train models during build so they are baked into the image
-RUN python train_cardiosight.py
+# Ensure uploads directory exists
+RUN mkdir -p uploads
 
 # Expose the port Flask runs on
 EXPOSE 5000
