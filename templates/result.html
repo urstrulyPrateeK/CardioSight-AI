@@ -65,10 +65,11 @@
         {% for model, score in result.ai_analysis.items() %}<input type="hidden" name="ai_{{ model }}" value="{{ score }}">{% endfor %}
         <button type="submit" class="btn-primary"><i class="fas fa-file-download"></i> Download PDF</button>
       </form>
-      {% if result.email %}
-      <button type="button" class="btn-secondary" id="mailReportBtn" onclick="sendReport()"><i class="fas fa-envelope"></i> Email Report</button>
-      {% endif %}
       <a href="/predict_page" class="btn-secondary"><i class="fas fa-redo"></i> New Assessment</a>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
+      <input type="email" id="sendEmailInput" class="form-control" placeholder="Enter any email to receive report" value="{{ result.email }}" style="max-width:320px;text-align:center;">
+      <button type="button" class="btn-secondary" id="mailReportBtn" onclick="sendReport()"><i class="fas fa-envelope"></i> Send Report</button>
     </div>
     <p id="email-status" style="margin-top:14px;font-size:0.85rem;color:var(--text-muted);"></p>
   </div>
@@ -83,10 +84,16 @@ setTimeout(()=>{document.querySelectorAll('.model-bar-fill').forEach(b=>{b.style
 function sendReport(){
   const btn=document.getElementById('mailReportBtn');
   const status=document.getElementById('email-status');
+  const emailInput=document.getElementById('sendEmailInput');
+  const recipientEmail=emailInput.value.trim();
+  if(!recipientEmail||!recipientEmail.includes('@')){
+    status.innerHTML='<span style="color:var(--danger);"><i class="fas fa-times-circle"></i> Please enter a valid email address</span>';
+    emailInput.focus();return;
+  }
   btn.disabled=true;btn.innerHTML='<span class="spinner" style="border-color:rgba(220,20,60,0.2);border-top-color:var(--crimson);"></span> Sending...';
-  status.textContent='Generating and sending report...';status.style.color='var(--text-muted)';
+  status.textContent='Generating and sending report to '+recipientEmail+'...';status.style.color='var(--text-muted)';
   const fd=new FormData();
-  fd.append('name','{{result.name}}');fd.append('email','{{result.email}}');fd.append('probability','{{result.probability}}');
+  fd.append('name','{{result.name}}');fd.append('email',recipientEmail);fd.append('probability','{{result.probability}}');
   fd.append('risk_level','{{result.risk_level}}');fd.append('risk_color','{{result.risk_color}}');
   fd.append('age','{{result.details.age}}');fd.append('gender','{{result.details.gender}}');
   fd.append('cp_label','{{result.details.cp_label}}');fd.append('trestbps','{{result.details.trestbps}}');
